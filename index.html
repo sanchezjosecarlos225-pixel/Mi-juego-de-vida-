@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>José vs Hábitos</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    background: #050505;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    overflow: hidden;
+    touch-action: none;
+}
+
+h1 {
+    color: cyan;
+    text-shadow: 0 0 15px cyan;
+    margin: 20px 0;
+}
+
+h2 {
+    color: cyan;
+}
+
+button {
+    display: block;
+    width: 250px;
+    margin: 12px auto;
+    padding: 14px;
+    border: 2px solid cyan;
+    border-radius: 12px;
+    background: #111;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+button:active {
+    background: cyan;
+    color: black;
+}
+
+#menu,
+#shop,
+#skins,
+#game {
+    width: 100%;
+}
+
+#game {
+    display: none;
+}
+
+#shop,
+#skins {
+    display: none;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 5px auto;
+    background: #111;
+    border: 2px solid white;
+    width: min(95vw, 420px);
+    height: auto;
+}
+
+#score {
+    color: yellow;
+    font-size: 16px;
+    margin: 5px;
+}
+
+/* CONTROLES */
+
+#controls {
+    width: 300px;
+    height: 170px;
+    margin: 5px auto;
+    position: relative;
+}
+
+.control {
+    position: absolute;
+    width: 65px;
+    height: 55px;
+    margin: 0;
+    padding: 0;
+    font-size: 25px;
+    border-radius: 12px;
+}
+
+#up {
+    left: 117px;
+    top: 0;
+}
+
+#left {
+    left: 45px;
+    top: 60px;
+}
+
+#down {
+    left: 117px;
+    top: 60px;
+}
+
+#right {
+    left: 189px;
+    top: 60px;
+}
+
+#shoot {
+    left: 117px;
+    top: 120px;
+    width: 110px;
+    background: #400;
+    border-color: red;
+}
+
+#shoot:active {
+    background: red;
+}
+
+#back {
+    width: 180px;
+    margin-top: 0;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚔️ JOSÉ VS HÁBITOS</h1>
+
+<!-- ================= MENU ================= -->
+
+<div id="menu">
+
+    <button onclick="startGame()">🎮 JUGAR</button>
+
+    <button onclick="openShop()">🛒 TIENDA</button>
+
+    <button onclick="openSkins()">🎨 SKINS</button>
+
+</div>
+
+
+<!-- ================= TIENDA ================= -->
+
+<div id="shop">
+
+    <h2>🛒 TIENDA</h2>
+
+    <p id="shopCoins">🪙 Monedas: 0</p>
+
+    <button onclick="buyTriple()">
+        🔫 DISPARO TRIPLE<br>
+        💰 20 monedas
+    </button>
+
+    <button onclick="buyShield()">
+        🛡️ ESCUDO<br>
+        💰 15 monedas
+    </button>
+
+    <button onclick="backMenu()">← MENÚ</button>
+
+</div>
+
+
+<!-- ================= SKINS ================= -->
+
+<div id="skins">
+
+    <h2>🎨 SKINS</h2>
+
+    <button onclick="changeSkin('cyan')">
+        🔵 JOSÉ AZUL
+    </button>
+
+    <button onclick="changeSkin('lime')">
+        🟢 JOSÉ VERDE
+    </button>
+
+    <button onclick="changeSkin('red')">
+        🔴 JOSÉ ROJO
+    </button>
+
+    <button onclick="changeSkin('gold')">
+        🟡 JOSÉ DORADO
+    </button>
+
+    <p id="skinText">Skin actual: Azul</p>
+
+    <button onclick="backMenu()">← MENÚ</button>
+
+</div>
+
+
+<!-- ================= JUEGO ================= -->
+
+<div id="game">
+
+    <canvas id="gameCanvas"
+            width="400"
+            height="500">
+    </canvas>
+
+    <div id="score">
+        ⭐ Puntos: 0 |
+        🪙 Monedas: 0 |
+        ❤️ Vida: 5 |
+        Nivel: 1
+    </div>
+
+
+    <!-- CONTROLES -->
+
+    <div id="controls">
+
+        <button
+            class="control"
+            id="up"
+            ontouchstart="move('up')">
+            ▲
+        </button>
+
+        <button
+            class="control"
+            id="left"
+            ontouchstart="move('left')">
+            ◀
+        </button>
+
+        <button
+            class="control"
+            id="down"
+            ontouchstart="move('down')">
+            ▼
+        </button>
+
+        <button
+            class="control"
+            id="right"
+            ontouchstart="move('right')">
+            ▶
+        </button>
+
+        <button
+            class="control"
+            id="shoot"
+            ontouchstart="shoot()">
+            🔥
+        </button>
+
+    </div>
+
+    <button id="back" onclick="backMenu()">
+        ← MENÚ
+    </button>
+
+</div>
+
+
+<script>
+
+/* ==========================================
+   CONFIGURACIÓN
+========================================== */
+
+const canvas =
+    document.getElementById("gameCanvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+/* ==========================================
+   JUGADOR
+========================================== */
+
+let player = {
+
+    x: 184,
+    y: 430,
+
+    width: 32,
+    height: 32,
+
+    speed: 25,
+
+    color: "cyan",
+
+    health: 5,
+    maxHealth: 5,
+
+    triple: false,
+    shield: false
+
+};
+
+
+/* ==========================================
+   VARIABLES
+========================================== */
+
+let enemies = [];
+
+let bullets = [];
+
+let enemyBullets = [];
+
+let boss = null;
+
+let level = 1;
+
+let score = 0;
+
+let coins = 0;
+
+let playing = false;
+
+let shieldTimeout = null;
+
+
+/* ==========================================
+   MENÚ
+========================================== */
+
+function startGame() {
+
+    document.getElementById("menu")
+        .style.display = "none";
+
+    document.getElementById("shop")
+        .style.display = "none";
+
+    document.getElementById("skins")
+        .style.display = "none";
+
+    document.getElementById("game")
+        .style.display = "block";
+
+    playing = true;
+
+    level = 1;
+
+    score = 0;
+
+    player.health = 5;
+
+    createLevel();
+
+    gameLoop();
+}
+
+
+/* ==========================================
+   TIENDA
+========================================== */
+
+function openShop() {
+
+    document.getElementById("menu")
+        .style.display = "none";
+
+    document.getElementById("shop")
+        .style.display = "block";
+
+    updateShop();
+}
+
+
+function updateShop() {
+
+    document.getElementById("shopCoins")
+        .innerText =
+        "🪙 Monedas: " + coins;
+}
+
+
+function buyTriple() {
+
+    if (player.triple) {
+
+        alert("Ya tienes el disparo triple.");
+
+        return;
+    }
+
+    if (coins >= 20) {
+
+        coins -= 20;
+
+        player.triple = true;
+
+        alert("🔫 ¡Disparo triple comprado!");
+
+        updateShop();
+
+    } else {
+
+        alert("❌ Necesitas 20 monedas.");
+
+    }
+}
+
+
+function buyShield() {
+
+    if (player.shield) {
+
+        alert("El escudo ya está activo.");
+
+        return;
+    }
+
+    if (coins >= 15) {
+
+        coins -= 15;
+
+        player.shield = true;
+
+        alert("🛡️ ¡Escudo activado!");
+
+        updateShop();
+
+        clearTimeout(shieldTimeout);
+
+        shieldTimeout = setTimeout(function() {
+
+            player.shield = false;
+
+            alert("El escudo se terminó.");
+
+        }, 10000);
+
+    } else {
+
+        alert("❌ Necesitas 15 monedas.");
+
+    }
+}
+
+
+/* ==========================================
+   SKINS
+========================================== */
+
+function openSkins() {
+
+    document.getElementById("menu")
+        .style.display = "none";
+
+    document.getElementById("skins")
+        .style.display = "block";
+}
+
+
+function changeSkin(color) {
+
+    player.color = color;
+
+    let name = "Azul";
+
+    if (color === "lime")
+        name = "Verde";
+
+    if (color === "red")
+        name = "Rojo";
+
+    if (color === "gold")
+        name = "Dorado";
+
+    document.getElementById("skinText")
+        .innerText =
+        "Skin actual: " + name;
+}
+
+
+/* ==========================================
+   VOLVER AL MENÚ
+========================================== */
+
+function backMenu() {
+
+    playing = false;
+
+    document.getElementById("game")
+        .style.display = "none";
+
+    document.getElementById("shop")
+        .style.display = "none";
+
+    document.getElementById("skins")
+        .style.display = "none";
+
+    document.getElementById("menu")
+        .style.display = "block";
+}
+
+
+/* ==========================================
+   CREAR NIVEL
+========================================== */
+
+function createLevel() {
+
+    enemies = [];
+
+    bullets = [];
+
+    enemyBullets = [];
+
+    player.x = 184;
+
+    player.y = 430;
+
+
+    /* ENEMIGOS */
+
+    let amount = 3 + level * 2;
+
+
+    for (let i = 0; i < amount; i++) {
+
+        enemies.push({
+
+            x: Math.random() * 360,
+
+            y: 100 + Math.random() * 180,
+
+            width: 30,
+
+            height: 30,
+
+            speed: 0.5 + level * 0.15,
+
+            color: "orange"
+
+        });
+
+    }
+
+
+    /* JEFE */
+
+    boss = {
+
+        x: 160,
+
+        y: 45,
+
+        width: 80,
+
+        height: 60,
+
+        health: 10 + level * 5,
+
+        maxHealth: 10 + level * 5,
+
+        speed: 1 + level * 0.2,
+
+        direction: 1
+
+    };
+
+}
+
+
+/* ==========================================
+   CONTROLES
+========================================== */
+
+function move(direction) {
+
+    if (!playing)
+        return;
+
+
+    if (direction === "up")
+        player.y -= player.speed;
+
+    if (direction === "down")
+        player.y += player.speed;
+
+    if (direction === "left")
+        player.x -= player.speed;
+
+    if (direction === "right")
+        player.x += player.speed;
+
+
+    /* Límites */
+
+    if (player.x < 0)
+        player.x = 0;
+
+    if (player.x >
+        canvas.width - player.width)
+
+        player.x =
+            canvas.width - player.width;
+
+
+    if (player.y < 0)
+        player.y = 0;
+
+    if (player.y >
+        canvas.height - player.height)
+
+        player.y =
+            canvas.height - player.height;
+}
+
+
+/* ==========================================
+   DISPARAR
+========================================== */
+
+function shoot() {
+
+    if (!playing)
+        return;
+
+
+    if (player.triple) {
+
+        bullets.push({
+
+            x: player.x + 2,
+
+            y: player.y,
+
+            width: 7,
+
+            height: 14,
+
+            speed: 8,
+
+            dx: -1
+
+        });
+
+
+        bullets.push({
+
+            x: player.x + 13,
+
+            y: player.y,
+
+            width: 7,
+
+            height: 14,
+
+            speed: 9,
+
+            dx: 0
+
+        });
+
+
+        bullets.push({
+
+            x: player.x + 25,
+
+            y: player.y,
+
+            width: 7,
+
+            height: 14,
+
+            speed: 8,
+
+            dx: 1
+
+        });
+
+    } else {
+
+        bullets.push({
+
+            x: player.x + 13,
+
+            y: player.y,
+
+            width: 7,
+
+            height: 14,
+
+            speed: 9,
+
+            dx: 0
+
+        });
+
+    }
+
+}
+
+
+/* ==========================================
+   COLISIÓN
+========================================== */
+
+function collision(a, b) {
+
+    return (
+
+        a.x < b.x + b.width &&
+
+        a.x + a.width > b.x &&
+
+        a.y < b.y + b.height &&
+
+        a.y + a.height > b.y
+
+    );
+
+}
+
+
+/* ==========================================
+   ACTUALIZAR BALAS
+========================================== */
+
+function updateBullets() {
+
+    bullets.forEach(function(b) {
+
+        b.y -= b.speed;
+
+        b.x += b.dx * 2;
+
+    });
+
+
+    bullets =
+        bullets.filter(function(b) {
+
+            return b.y > -30;
+
+        });
+
+
+    enemyBullets.forEach(function(b) {
+
+        b.y += b.speed;
+
+    });
+
+
+    enemyBullets =
+        enemyBullets.filter(function(b) {
+
+            return b.y < canvas.height + 30;
+
+        });
+
+}
+
+
+/* ==========================================
+   ENEMIGOS
+========================================== */
+
+function updateEnemies() {
+
+    enemies.forEach(function(enemy) {
+
+        enemy.y += enemy.speed;
+
+
+        if (enemy.y >
+            canvas.height) {
+
+            enemy.y = -30;
+
+            enemy.x =
+                Math.random() *
+                (canvas.width - 30);
+
+        }
+
+    });
+
+}
+
+
+/* ==========================================
+   JEFE
+========================================== */
+
+function updateBoss() {
+
+    if (!boss ||
+        boss.health <= 0)
+        return;
+
+
+    boss.x +=
+        boss.speed *
+        boss.direction;
+
+
+    if (
+        boss.x <= 0 ||
+        boss.x + boss.width >=
+        canvas.width
+    ) {
+
+        boss.direction *= -1;
+
+    }
+
+}
+
+
+/* ==========================================
+   DISPAROS DEL JEFE
+========================================== */
+
+let lastBossShot = 0;
+
+
+function bossShoot() {
+
+    if (!boss ||
+        boss.health <= 0)
+        return;
+
+
+    let now = Date.now();
+
+
+    if (now - lastBossShot < 1200)
+        return;
+
+
+    lastBossShot = now;
+
+
+    enemyBullets.push({
+
+        x: boss.x +
+           boss.width / 2 - 5,
+
+        y: boss.y +
+           boss.height,
+
+        width: 10,
+
+        height: 15,
+
+        speed: 4 + level
+
+    });
+
+}
+
+
+/* ==========================================
+   COLISIONES
+========================================== */
+
+function checkCollisions() {
+
+
+    /* BALAS VS ENEMIGOS */
+
+    for (
+        let i = enemies.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        for (
+            let j = bullets.length - 1;
+            j >= 0;
+            j--
+        ) {
+
+            if (
+                collision(
+                    bullets[j],
+                    enemies[i]
+                )
+            ) {
+
+                enemies.splice(i, 1);
+
+                bullets.splice(j, 1);
+
+                score += 10;
+
+                coins += 1;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+    /* BALAS VS JEFE */
+
+    if (
+        boss &&
+        boss.health > 0
+    ) {
+
+        for (
+            let i = bullets.length - 1;
+            i >= 0;
+            i--
+        ) {
+
+            if (
+                collision(
+                    bullets[i],
+                    boss
+                )
+            ) {
+
+                bullets.splice(i, 1);
+
+                boss.health--;
+
+                score += 5;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+
+    /* ENEMIGOS VS JUGADOR */
+
+    for (
+        let i = enemies.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        if (
+            collision(
+                player,
+                enemies[i]
+            )
+        ) {
+
+            enemies.splice(i, 1);
+
+            damagePlayer();
+
+        }
+
+    }
+
+
+    /* BALAS VS JUGADOR */
+
+    for (
+        let i = enemyBullets.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        if (
+            collision(
+                player,
+                enemyBullets[i]
+            )
+        ) {
+
+            enemyBullets.splice(i, 1);
+
+            damagePlayer();
+
+        }
+
+    }
+
+}
+
+
+/* ==========================================
+   DAÑO
+========================================== */
+
+function damagePlayer() {
+
+    if (player.shield)
+        return;
+
+
+    player.health--;
+
+
+    if (player.health <= 0) {
+
+        gameOver();
+
+    }
+
+}
+
+
+/* ==========================================
+   GAME OVER
+========================================== */
+
+function gameOver() {
+
+    playing = false;
+
+
+    alert(
+        "💀 GAME OVER\n\n" +
+        "⭐ Puntos: " + score +
+        "\n🪙 Monedas: " + coins +
+        "\n🏆 Nivel: " + level
+    );
+
+
+    backMenu();
+
+}
+
+
+/* ==========================================
+   SIGUIENTE NIVEL
+========================================== */
+
+function nextLevel() {
+
+    level++;
+
+    score += 100;
+
+    coins += 10;
+
+
+    alert(
+        "🔥 ¡NIVEL SUPERADO!\n\n" +
+        "🏆 Nivel " + level +
+        "\n⭐ +100 puntos" +
+        "\n🪙 +10 monedas"
+    );
+
+
+    createLevel();
+
+}
+
+
+/* ==========================================
+   DIBUJAR
+========================================== */
+
+function draw() {
+
+    /* Fondo */
+
+    ctx.fillStyle = "#080808";
+
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Estrellas */
+
+    ctx.fillStyle = "#333";
+
+    for (
+        let i = 0;
+        i < 30;
+        i++
+    ) {
+
+        let x =
+            (i * 83) %
+            canvas.width;
+
+        let y =
+            (i * 47) %
+            canvas.height;
+
+        ctx.fillRect(
+            x,
+            y,
+            2,
+            2
+        );
+
+    }
+
+
+    /* JUGADOR */
+
+    ctx.fillStyle =
+        player.color;
+
+    ctx.fillRect(
+
+        player.x,
+
+        player.y,
+
+        player.width,
+
+        player.height
+
+    );
+
+
+    /* Cara */
+
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        player.x + 6,
+        player.y + 7,
+        6,
+        6
+    );
+
+    ctx.fillRect(
+        player.x + 20,
+        player.y + 7,
+        6,
+        6
+    );
+
+
+    /* ESCUDO */
+
+    if (player.shield) {
+
+        ctx.strokeStyle =
+            "cyan";
+
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+
+        ctx.arc(
+
+            player.x + 16,
+
+            player.y + 16,
+
+            27,
+
+            0,
+
+            Math.PI * 2
+
+        );
+
+        ctx.stroke();
+
+    }
+
+
+    /* ENEMIGOS */
+
+    enemies.forEach(function(enemy) {
+
+        ctx.fillStyle =
+            enemy.color;
+
+        ctx.fillRect(
+
+            enemy.x,
+
+            enemy.y,
+
+            enemy.width,
+
+            enemy.height
+
+        );
+
+    });
+
+
+    /* JEFE */
+
+    if (
+        boss &&
+        boss.health > 0
+    ) {
+
+        ctx.fillStyle =
+            "purple";
+
+        ctx.fillRect(
+
+            boss.x,
+
+            boss.y,
+
+            boss.width,
+
+            boss.height
+
+        );
+
+
+        /* Ojos */
+
+        ctx.fillStyle =
+            "red";
+
+        ctx.fillRect(
+            boss.x + 15,
+            boss.y + 15,
+            15,
+            12
+        );
+
+        ctx.fillRect(
+            boss.x + 50,
+            boss.y + 15,
+            15,
+            12
+        );
+
+
+        /* Barra de vida */
+
+        ctx.fillStyle =
+            "red";
+
+        ctx.fillRect(
+            70,
+            20,
+            260,
+            15
+        );
+
+
+        ctx.fillStyle =
+            "lime";
+
+        ctx.fillRect(
+
+            70,
+
+            20,
+
+            260 *
+            (
+                boss.health /
+                boss.maxHealth
+            ),
+
+            15
+
+        );
+
+
+        ctx.strokeStyle =
+            "white";
+
+        ctx.strokeRect(
+            70,
+            20,
+            260,
+            15
+        );
+
+    }
+
+
+    /* BALAS */
+
+    bullets.forEach(function(b) {
+
+        ctx.fillStyle =
+            "yellow";
+
+        ctx.fillRect(
+
+            b.x,
+
+            b.y,
+
+            b.width,
+
+            b.height
+
+        );
+
+    });
+
+
+    /* BALAS ENEMIGAS */
+
+    enemyBullets.forEach(function(b) {
+
+        ctx.fillStyle =
+            "red";
+
+        ctx.fillRect(
+
+            b.x,
+
+            b.y,
+
+            b.width,
+
+            b.height
+
+        );
+
+    });
+
+
+    /* NIVEL */
+
+    ctx.fillStyle =
+        "white";
+
+    ctx.font =
+        "16px Arial";
+
+    ctx.fillText(
+        "NIVEL " + level,
+        10,
+        55
+    );
+
+
+    /* ACTUALIZAR TEXTO */
+
+    document.getElementById("score")
+        .innerText =
+
+        "⭐ Puntos: " +
+        score +
+
+        " | 🪙 Monedas: " +
+        coins +
+
+        " | ❤️ Vida: " +
+        player.health +
+
+        " | 🏆 Nivel: " +
+        level;
+
+}
+
+
+/* ==========================================
+   BUCLE DEL JUEGO
+========================================== */
+
+function gameLoop() {
+
+    if (!playing)
+        return;
+
+
+    updateBullets();
+
+    updateEnemies();
+
+    updateBoss();
+
+    bossShoot();
+
+    checkCollisions();
+
+    /* NIVEL SUPERADO */
+
+    if (
+        boss &&
+        boss.health <= 0
+    ) {
+
+        nextLevel();
+
+    }
+
+
+    draw();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
+
+}
+
+</script>
+
+</body>
+</html>
